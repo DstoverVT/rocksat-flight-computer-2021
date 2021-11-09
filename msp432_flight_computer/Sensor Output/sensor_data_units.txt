@@ -1,0 +1,1 @@
+Timestamp (s), IMU Temperature (*C), IMU Accel X (m/s^2), IMU Accel Y (m/s^2), IMU Accel Z (m/s^2), IMU Mag X (uT), IMU Mag Y (uT), IMU Mag Z (uT), IMU Gyro X (rad/s), IMU Gyro Y (rad/s), IMU Gyro Z (rad/s), ADXL AccelX (g), ADXL AccelY (g), ADXL AccelZ (g), BMP Temperature (*C), BMP Pressure (hPa), BMP Altitude (m), Message (text)
