@@ -5,9 +5,10 @@
 #include <BMP388_DEV.h>  
 
 extern BMP388_DEV bmp388; 
+extern bool BMP_initialized;
 
 // Configure IMU Peripheral
-void init_Barometer();
+bool init_Barometer();
 
 // Prints IMU data to Serial monitor
 void printBarometerData(float temperature, float pressure, float altitude);

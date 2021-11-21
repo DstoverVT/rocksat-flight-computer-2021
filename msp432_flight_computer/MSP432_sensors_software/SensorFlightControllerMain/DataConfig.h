@@ -1,5 +1,6 @@
 #ifndef DATACONFIG_H
 #define DATACONFIG_H
+//#define DEBUG 1
 
 #include "Energia.h"
 

@@ -57,6 +57,10 @@ void storeAccelData(char* fileName, float accelX, float accelY, float accelZ)
 // Collects accelerometer, gyroscope, temperature, and magnetometer data from ICM-20948 IMU
 void handleAccelData(char* fileName)
 {
+  #ifdef DEBUG
+  Serial.println("Handling Accel data");
+  #endif
+
   int accelX_raw = analogRead(X_PIN);
   int accelY_raw = analogRead(Y_PIN);
   int accelZ_raw = analogRead(Z_PIN);

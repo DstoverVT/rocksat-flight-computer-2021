@@ -20,7 +20,6 @@ char sensorFileName[] = "sensors0.csv";                // File name (must be 8 c
 uint8_t fileNumberIndex = FILE_NUM_LOCATION;  // Index of file name number (right before .csv)
 
 // Time variables
-unsigned long milliseconds;
 float flightTimeSeconds;                               // Keeps track of time since launch (electronics should start at T-180)
 
 
@@ -32,47 +31,49 @@ float milliToSeconds(unsigned long milliTime)
 
 
 // Initializes all hardware
-void setup() 
+void setupMain() 
 {
   Serial.begin(115200);
-  Serial.println("----------------PROGRAM START---------------");
+  #ifdef DEBUG
+  Serial.println("----------------MAIN PROGRAM START---------------");
+  #endif
 
   // Data output configuration
-  printAllData();     /* Choices for Serial print (from DataConfig.h):
-                         printAllData - prints data for all sensors
-                         printNoData - prints data for no sensors
-                         printSensor - prints data for a single sensor
-                      */
-  saveNoDataToSD();  /* Choices for SD card saving (from DataConfig.h):
-                         saveAllDataToSD
-                         saveNoDataToSD
-                         saveSensorToSD
-                      */
+  printAllData();
+  saveAllDataToSD();
 
-  init_SD();
+  SD_initialized = init_SD();
 
   // Create file on SD card called sensorFileName
   // Automatically renumbers duplicate files from 0 - 9 (MUST delete/rename a file after 10 are stored on SD card with consecutive numbers)
   createFile(sensorFileName, fileNumberIndex);
 
-  Serial.println("init IMU");
-  init_IMU();
-  Serial.println("init Accel");
+  #ifdef DEBUG
+  Serial.println("init IMU from main");
+  #endif
+  IMU_initialized = init_IMU();
+  #ifdef DEBUG
+  Serial.println("init Accel from main");
+  #endif
   init_Accel();
-  Serial.println("init Barometer");
-  init_Barometer();
+  #ifdef DEBUG
+  Serial.println("init Barometer from main");
+  #endif
+  BMP_initialized = init_Barometer();
 }
 
 
 // Main flight program loop
-void loop() 
+void loopMain() 
 { 
-  // Calculate time since launch
+//  // Calculate time since launch
   flightTimeSeconds = ELECTRONICS_STARTUP + milliToSeconds(millis());
+  #ifdef DEBUG
   Serial.print("Time: ");
   Serial.println(flightTimeSeconds);
-
-  // Write time to SD card file
+  #endif
+//
+//  // Write time to SD card file
   writeTimestamp(sensorFileName, flightTimeSeconds);
 
   // Handle sensor data collection and SD storage
@@ -86,5 +87,5 @@ void loop()
   // Write message to SD card file 
   writeMessage(sensorFileName);  
   
-  delay(1000);
+  delay(500);
 }

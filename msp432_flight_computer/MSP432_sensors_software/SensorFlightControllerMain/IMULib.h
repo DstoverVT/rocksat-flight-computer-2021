@@ -9,9 +9,10 @@
 #define TO_GRAVITY  9.8
 
 extern ICM_20948_I2C ICM_sensor;
+extern bool IMU_initialized;
 
 // Configure IMU Peripheral
-void init_IMU();
+bool init_IMU();
 
 // Helper functions for init_IMU
 // Return true if IMU communications set up successfully; false otherwise
