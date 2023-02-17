@@ -1,13 +1,20 @@
+/*
+ * AccelLib.h
+ * RockSat-X 2022
+ * 
+ * Accelerometer definition file.
+ */
+
 #ifndef ACCELLIB_H
 #define ACCELLIB_H
 
 #include "SDLib.h"
 
 // ADXL sensor variables
-extern int range;
-extern int X_PIN;
-extern int Y_PIN;
-extern int Z_PIN;
+extern const int range;
+extern const int X_PIN;
+extern const int Y_PIN;
+extern const int Z_PIN;
 
 // Configure IMU Peripheral
 void init_Accel();

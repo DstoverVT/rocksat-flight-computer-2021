@@ -1,44 +1,61 @@
+/*
+ * SDlib.cpp
+ * RockSat-X 2022
+ * 
+ * SD implementation file.
+ */
+
 #include "SDLib.h"
 
 // Global access to file
 File sensor_file;
+bool SD_initialized = false;
 bool sd_ready = false;
 
 // Uses SD.begin to initialize SD card
-void init_SD()
+bool init_SD()
 {
+//    Serial.println("SD startup - before begin");
     sd_ready = SD.begin(SDCardChipSelect);
-    sd_ready = false;   // Print no data to SD card
+//    Serial.println("SD startup - after begin");
+
     if(sd_ready) {
-        messages += "SD Card communication setup complete; ";        
+//        Serial.println("SD startup succeeded");
+        messages += "SD card reader initialization successful; "; 
+        return true;       
     }
     else {
-        messages += "INIT_SD: Communication with SD Card failed, program will continue without SD card; ";        
+//        Serial.println("SD startup failed");
+        messages += "SD card reader initialization failed, continuing without SD card; ";        
         saveNoDataToSD();   // Can't save any data to SD card
+        return false;
     }
 }
 
 
 void createFile(char* fileName, uint8_t numIndex)
 {
-    if(sd_ready) {
+    if(SD_initialized) {
         // If file already exists, increment number at end
         while(SD.exists(fileName)) {
             char fileNum = fileName[numIndex];
             // Make sure this index is a digit
-            if(isdigit(fileNum)) {
+            if(isdigit(fileNum)) {                
                 if(fileNum == '9') {
-                    Serial.println("10 files with this name have been created, delete or rename one of them to create this one");
-                }
+//                    Serial.println("10 files with this name have been created, will overwrite 0");                    
+                    fileName[numIndex] = '0';                    
+                    break;
+                }        
                 fileName[numIndex] = fileNum + 1; // Increment file name number by 1
             }
             // Make it a digit if it is not already one
             else {
-                fileName[numIndex] = '1';
+                fileName[numIndex] = '0';
             }
         }
 
         // Create file
+        SD.remove(fileName);
         sensor_file = SD.open(fileName, FILE_WRITE);
 
         // File opened successfully
@@ -59,12 +76,15 @@ void createFile(char* fileName, uint8_t numIndex)
             sensor_file.println("Message");        
 
             sensor_file.close();  // Save SD card file
+//            Serial.print("SD card file created with name: ");
+//            Serial.println(fileName);
             messages += "SD card file successfully created with the name: ";
             messages += fileName;
             messages += "; ";          
         }
         // File did not open successfully
         else {
+//            Serial.println("SD card file could not be found");
             messages += "createFile: SD file could not be opened/found, program will continue without writing data to the SD card; ";            
             saveNoDataToSD();
         }
@@ -75,7 +95,7 @@ void createFile(char* fileName, uint8_t numIndex)
 
 void writeTimestamp(char* fileName, float time)
 { 
-    if(sd_ready) {   
+    if(SD_initialized) {   
         sensor_file = SD.open(fileName, FILE_WRITE);
         if(sensor_file) {
             sensor_file.print(time);
@@ -89,7 +109,7 @@ void writeMessage(char* fileName)
 {   
     // Write messages to SD card    
     // If message is empty
-    if(sd_ready) {
+    if(SD_initialized) {
         String sd_message = messages;
         if(sd_message.length() == 0) {
             sd_message = "No messages";
@@ -107,16 +127,16 @@ void writeMessage(char* fileName)
     }
 
     // Output messages to console    
-    Serial.print("PRINTING MESSAGES:");
-    // If message is empty
-    if(messages.length() == 0) {
-        messages = "No messages";
-    }
-
-    Serial.print("Messages: [");
-    Serial.print(messages);
-    Serial.println("]");
-    Serial.println();        
+//    Serial.print("PRINTING MESSAGES: ");
+//    // If message is empty
+//    if(messages.length() == 0) {
+//        messages = "No messages";
+//    }
+//
+//    Serial.print("Messages: [");
+//    Serial.print(messages);
+//    Serial.println("]");
+//    Serial.println();        
 
     messages = "";
 }

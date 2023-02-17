@@ -1,3 +1,10 @@
+/*
+ * BarometerLib.h
+ * RockSat-X 2022
+ * 
+ * Barometer definition file.
+ */
+
 #ifndef BAROMETERLIB_H
 #define BAROMETERLIB_H
 
@@ -5,9 +12,10 @@
 #include <BMP388_DEV.h>  
 
 extern BMP388_DEV bmp388; 
+extern bool BMP_initialized;
 
 // Configure IMU Peripheral
-void init_Barometer();
+bool init_Barometer();
 
 // Prints IMU data to Serial monitor
 void printBarometerData(float temperature, float pressure, float altitude);

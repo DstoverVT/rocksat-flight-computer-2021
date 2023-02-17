@@ -1,73 +1,107 @@
+/*
+ * IMULib.cpp
+ * RockSat-X 2022
+ * 
+ * IMU implementation file.
+ */
+
 #include "IMULib.h"
 
 ICM_20948_I2C ICM_sensor;
+bool IMU_initialized = false;
 bool imu_ready = false;
 
-void init_IMU()
+
+float accelMGtoG(float accel)
 {
-    // Set up I2C communication
-    imu_ready = setup_IMU_I2C();
+  return accel / 1000.0;
+}
+
+
+float degToRad(float DPS)
+{
+  return (DPS*PI) / 180.0;
+}
+
+
+bool isIMUError()
+{
+    if( ICM_sensor.status != ICM_20948_Stat_Ok ){
+//      Serial.print(F("IMU Error with status: "));
+//      Serial.println(ICM_sensor.statusString());
+      return true;    
+    }
+
+    return false;
+}
+
+
+bool init_IMU()
+{
+
+    Wire.begin();
+
+    bool initialized = false;
+    ICM_sensor.begin( Wire, AD0_VAL );
+
+    ICM_sensor.swReset( );
+    delay(250);
+
+    // Now wake the sensor up
+    ICM_sensor.sleep( false );
+    ICM_sensor.lowPower( false );
+    delay(100);
+
+    // ------- INITIALIZE Digital Motion Processor for background calibration --------
+    // Enable the DMP
+    ICM_sensor.enableDMP();
+  
+    // Reset DMP
+    ICM_sensor.resetDMP();
+
+    // ------- INITIALIZE SENSOR DATA ---------
+    // Set Gyro and Accelerometer to a particular sample mode
+    // options: ICM_20948_Sample_Mode_Continuous
+    //          ICM_20948_Sample_Mode_Cycled
+    ICM_sensor.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous );
+
+    ICM_20948_fss_t myFSS;  // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
+
+    myFSS.a = gpm16;         // (ICM_20948_ACCEL_CONFIG_FS_SEL_e)
+                            // gpm2
+                            // gpm4
+                            // gpm8
+                            // gpm16
+
+    myFSS.g = dps2000;       // (ICM_20948_GYRO_CONFIG_1_FS_SEL_e)
+                            // dps250
+                            // dps500
+                            // dps1000
+                            // dps2000
+
+    ICM_sensor.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), myFSS );
+
+    // Choose whether or not to start the magnetometer
+    ICM_sensor.startupMagnetometer();
 
     // If IMU errors occur
-    if(!imu_ready) {
-        messages += "Tried to initialized IMU 100 times but failed, continuing without IMU; ";        
+    initialized = !isIMUError();
+    if(!initialized) {
+//        Serial.println("IMU initialization failed");
+        messages += "IMU initialization failed, continuing without IMU; ";        
         saveToSD[IMU] = false;
         printData[IMU] = false;
+        return false;
     }
     else {
-        messages += "IMU ICM-20948 communication setup complete; ";        
-        configureIMU();
+//        Serial.println("IMU initialization succeeded");
+        messages += "IMU initialization successful; ";        
+        if(SD_initialized) {
+          saveToSD[IMU] = true;
+        }
+//        printData[IMU] = true;
+        return true;
     }
-}
-
-
-bool setup_IMU_I2C()
-{
-    // *****FIX SO IMU WORKS IF NOT PLUGGED IN 
-    Serial.println("Tried starting IMU Wire");   
-    Wire.begin(); // MSP432 defaults to 400 kHz according to msp432r-core/cores/msp432r/ti/runtime/wiring/Wire.cpp in Energia GitHub (search for I2C_Params)
-    
-    bool icm_error = false;
-    bool ICM_initialized = false;
-    int ICM_initialization_attempts = 0;
-    while(!icm_error && !ICM_initialized && ICM_initialization_attempts < 10) {
-      // Keep trying to initialize I2C communication with ICM-20948
-      ICM_sensor.begin(Wire, AD0_VAL);
-      Serial.println("Tried starting IMU");
-      if(ICM_sensor.status == ICM_20948_Stat_Ok) {      
-        ICM_initialized = true;        
-      }
-      
-      ICM_initialization_attempts++;
-      delay(50);
-    }
-
-    return ICM_initialized;
-}
-
-
-void configureIMU()
-{
-        // Configure ICM-20948 sensor settings
-    ICM_sensor.setSampleMode( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), ICM_20948_Sample_Mode_Continuous );  // Set gyro and accelerometer sample modes to continuous
-    // printICMStatusWithMessage(ICM_sensor, "setSampleMode returned: ");
-
-    // Set full scale ranges for both acc and gyr
-    ICM_20948_fss_t accAndGyroSensitivity;  // This uses a "Full Scale Settings" structure that can contain values for all configurable sensors
-
-    accAndGyroSensitivity.a = gpm16;    // Set accelerometer to +/- 16g
-    accAndGyroSensitivity.g = dps2000;  // Set gyroscope +/- 2000dps
-
-    ICM_sensor.setFullScale( (ICM_20948_Internal_Acc | ICM_20948_Internal_Gyr), accAndGyroSensitivity );
-    // printICMStatusWithMessage(ICM_sensor, "setFullScale returned: ");
-
-    ICM_sensor.startupMagnetometer();
-    // printICMStatusWithMessage(ICM_sensor, "startupMagnetometer returned: ");
-    
-    // This was from Adafruit library - determine where data rate is set in SparkFun library
-    float accel_rate = 53.57;  // 1125 Hz / 21 = output data rate (53.57 Hz), which is longest data rate
-    float gyro_rate = 100;    // 1100 Hz / 10 = output data rate (100 Hz)
-    // Magnetometer is set to 100 Hz output data rate
 }
 
 
@@ -81,11 +115,11 @@ void printIMUData()
   
     /* Display accelerometer results (acceleration is measured in m/s^2) */
     Serial.print("Accel\t X: ");
-    Serial.print(ICM_sensor.accX());
+    Serial.print(accelMGtoG(ICM_sensor.accX()));
     Serial.print(" \tY: ");
-    Serial.print(ICM_sensor.accY());
+    Serial.print(accelMGtoG(ICM_sensor.accY()));
     Serial.print(" \tZ: ");
-    Serial.print(ICM_sensor.accZ());
+    Serial.print(accelMGtoG(ICM_sensor.accZ()));
     Serial.println(" g ");
   
     /* Display magnetometer results (magnetometer data is measured in uT) */
@@ -99,12 +133,12 @@ void printIMUData()
   
     /* Display gyro results (gyro data is measured in radians/s) */
     Serial.print("Gyro\t X: ");
-    Serial.print(ICM_sensor.gyrX());
+    Serial.print(degToRad(ICM_sensor.gyrX()));
     Serial.print(" \tY: ");
-    Serial.print(ICM_sensor.gyrY());
+    Serial.print(degToRad(ICM_sensor.gyrY()));
     Serial.print(" \tZ: ");
-    Serial.print(ICM_sensor.gyrZ());
-    Serial.println(" radians/s ");
+    Serial.print(degToRad(ICM_sensor.gyrZ()));
+    Serial.println(" rad/s ");
     Serial.println();
 }
 
@@ -118,11 +152,11 @@ void storeIMUData(char* fileName)
       sensor_file.print(',');
       sensor_file.print(ICM_sensor.temp());
       sensor_file.print(',');
-      sensor_file.print(ICM_sensor.accX());
+      sensor_file.print(accelMGtoG(ICM_sensor.accX()));
       sensor_file.print(',');
-      sensor_file.print(ICM_sensor.accY());
+      sensor_file.print(accelMGtoG(ICM_sensor.accY()));
       sensor_file.print(',');
-      sensor_file.print(ICM_sensor.accZ());
+      sensor_file.print(accelMGtoG(ICM_sensor.accZ()));
       sensor_file.print(',');
       sensor_file.print(ICM_sensor.magX());
       sensor_file.print(',');
@@ -130,11 +164,11 @@ void storeIMUData(char* fileName)
       sensor_file.print(',');
       sensor_file.print(ICM_sensor.magZ());
       sensor_file.print(',');
-      sensor_file.print(ICM_sensor.gyrX());
+      sensor_file.print(degToRad(ICM_sensor.gyrX()));
       sensor_file.print(',');
-      sensor_file.print(ICM_sensor.gyrY());
+      sensor_file.print(degToRad(ICM_sensor.gyrY()));
       sensor_file.print(',');
-      sensor_file.print(ICM_sensor.gyrZ());
+      sensor_file.print(degToRad(ICM_sensor.gyrZ()));
 
       sensor_file.close();
     }
@@ -146,29 +180,21 @@ void storeIMUData(char* fileName)
 
 
 void handleIMUData(char* fileName)
-{
-  if(imu_ready) {
+{  
+  if(IMU_initialized) {
     // Collect IMU sensor data
     if(ICM_sensor.dataReady()) {
       ICM_sensor.getAGMT();   // AGMT = accelerometer, gyroscope, magnetometer, temperature. Updates readings
-    }
-    
-    // Print IMU sensor data (if printData is true)
-    if(printData[IMU]) {
-      printIMUData();
-    }
 
-    // Store IMU sensor data to SD card (if saveToSD is true)
-    if(saveToSD[IMU]) {
-      storeIMUData(fileName);
+      // Print IMU sensor data (if printData is true)
+//      if(printData[IMU]) {
+//        printIMUData();
+//      }
+  
+      // Store IMU sensor data to SD card (if saveToSD is true)
+      if(saveToSD[IMU]) {
+        storeIMUData(fileName);
+      }
     }
-  }
-}
-
-
-void printICMStatusWithMessage(char* message) {
-    if(ICM_sensor.status != ICM_20948_Stat_Ok){
-    Serial.print(message);
-    Serial.println(ICM_sensor.statusString());
   }
 }

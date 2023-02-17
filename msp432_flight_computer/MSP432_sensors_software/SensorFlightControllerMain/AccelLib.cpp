@@ -1,10 +1,18 @@
+/*
+ * AccelLib.cpp
+ * RockSat-X 2022
+ * 
+ * Accelerometer implementation file.
+ */
+
 #include "AccelLib.h"
 
 // ADXL sensor variables
-int range = 200;
-int X_PIN = A3;
-int Y_PIN = A4;
-int Z_PIN = A2;
+const int range = 200;
+const int X_PIN = A3;
+const int Y_PIN = A4;
+const int Z_PIN = A2;
+
 
 // Configure IMU Peripheral
 void init_Accel()
@@ -57,6 +65,8 @@ void storeAccelData(char* fileName, float accelX, float accelY, float accelZ)
 // Collects accelerometer, gyroscope, temperature, and magnetometer data from ICM-20948 IMU
 void handleAccelData(char* fileName)
 {
+//  Serial.println("Handling Accel data");
+
   int accelX_raw = analogRead(X_PIN);
   int accelY_raw = analogRead(Y_PIN);
   int accelZ_raw = analogRead(Z_PIN);
@@ -65,9 +75,9 @@ void handleAccelData(char* fileName)
   float accelY = readingToAcceleration(accelY_raw);
   float accelZ = readingToAcceleration(accelZ_raw);
 
-  if(printData[ACCEL]) {
-    printAccelData(accelX, accelY, accelZ);
-  }
+//  if(printData[ACCEL]) {
+//    printAccelData(accelX, accelY, accelZ);
+//  }
 
   if(saveToSD[ACCEL]) {
     storeAccelData(fileName, accelX, accelY, accelZ);
@@ -75,9 +85,11 @@ void handleAccelData(char* fileName)
 }
 
 
-float readingToAcceleration(float reading) {
-  int maxAnalogRead = pow(2, 14) - 1; // 14 bit ADC
-  int maxInput = (3.3 / 5.0) * maxAnalogRead; // 3.3V maximum
+float readingToAcceleration(float reading)
+{
+  int maxAnalogRead = pow(2, 14) - 1;               // 14 bit ADC
+//  int maxInput = (3.3 / 5.0) * maxAnalogRead;     // 3.3V maximum
+  int maxInput = maxAnalogRead;                     // 5V maximum
   float readingRatio = reading / (float)maxInput;
-  return readingRatio * (range * 2.0) - range;  // Convert reading ratio to acceleration (in g's)
+  return readingRatio * (range * 2.0) - range;      // Convert reading ratio to acceleration (in g's)
 }

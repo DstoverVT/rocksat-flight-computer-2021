@@ -1,5 +1,13 @@
+/*
+ * DataConfig.h
+ * RockSat-X 2022
+ * 
+ * Data config definition file.
+ */
+
 #ifndef DATACONFIG_H
 #define DATACONFIG_H
+//#define DEBUG 1
 
 #include "Energia.h"
 

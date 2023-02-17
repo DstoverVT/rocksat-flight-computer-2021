@@ -1,3 +1,10 @@
+/*
+ * SDLib.h
+ * RockSat-X 2022
+ * 
+ * SD definition file.
+ */
+
 #ifndef SDLIB_H
 #define SDLIB_H
 
@@ -7,9 +14,10 @@
 
 const int SDCardChipSelect = 13;
 extern File sensor_file;
+extern bool SD_initialized;
 
 // Configure SD card peripheral
-void init_SD();
+bool init_SD();
 
 /*
 * Create SD card file with name fileName

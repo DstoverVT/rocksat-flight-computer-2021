@@ -1,3 +1,10 @@
+/*
+ * DataConfig.cpp
+ * RockSat-X 2022
+ * 
+ * Data configutation implementation file.
+ */
+
 #include "DataConfig.h"
 
 // Prints and stores no data by default, designed for global access
@@ -6,6 +13,7 @@ bool saveToSD[PERIPHERAL_NUM] = { false, false, false };
 
 // Message log
 String messages = "";
+
 
 // Configure which sensor data to print to Serial monitor
 void printAllData()

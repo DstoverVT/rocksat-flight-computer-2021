@@ -1,3 +1,10 @@
+/*
+ * IMULib.h
+ * RockSat-X 2022
+ * 
+ * IMU definition file.
+ */
+
 #ifndef IMULIB_H
 #define IMULIB_H
 
@@ -9,9 +16,10 @@
 #define TO_GRAVITY  9.8
 
 extern ICM_20948_I2C ICM_sensor;
+extern bool IMU_initialized;
 
 // Configure IMU Peripheral
-void init_IMU();
+bool init_IMU();
 
 // Helper functions for init_IMU
 // Return true if IMU communications set up successfully; false otherwise
@@ -26,7 +34,5 @@ void storeIMUData(char* fileName);
 
 // Collects accelerometer, gyroscope, temperature, and magnetometer data from ICM-20948 IMU
 void handleIMUData(char* fileName);
-
-void printICMStatusWithMessage(char* message);
 
 #endif  /* IMULIB_H */
